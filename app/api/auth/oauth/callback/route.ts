@@ -135,20 +135,36 @@ export async function GET(request: Request) {
     const oauthToken = crypto.randomUUID();
     const tokenExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
     
-    // Store token in database or cache (simplified - using a cookie for now)
-    // In production, use Redis or similar
+    // Encode user data in URL as fallback (in case cookies don't work)
+    const tokenData = {
+      userId: user.id,
+      token: oauthToken,
+      timestamp: Date.now(),
+    };
+    const encodedData = Buffer.from(JSON.stringify(tokenData)).toString("base64url");
+    
+    console.log("OAuth callback - creating redirect:", {
+      userId: user.id,
+      token: oauthToken.substring(0, 10) + "...",
+      encodedDataLength: encodedData.length,
+      callbackUrl,
+    });
     
     // Clear OAuth cookies and set OAuth token
     const response = NextResponse.redirect(
-      new URL(`/api/auth/oauth/complete?token=${oauthToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`, baseUrl)
+      new URL(`/api/auth/oauth/complete?token=${oauthToken}&callbackUrl=${encodeURIComponent(callbackUrl)}&data=${encodedData}`, baseUrl)
     );
     response.cookies.delete("oauth_state");
     response.cookies.delete("oauth_callback");
+    
+    // Set cookie (primary method)
+    const isSecure = process.env.NODE_ENV === "production";
     response.cookies.set("oauth_token", JSON.stringify({ userId: user.id, token: oauthToken, expiry: tokenExpiry }), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecure,
       sameSite: "lax",
       maxAge: 300, // 5 minutes
+      path: "/",
     });
 
     return response;
