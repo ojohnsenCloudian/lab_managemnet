@@ -26,11 +26,48 @@ export * from '../enums';
 fs.writeFileSync(path.join(defaultPath, 'index.ts'), indexTs);
 
 // Create index.js - re-export from parent directory
-// The key is that Next.js/Turbopack will resolve TypeScript files during build
-// Even though require() normally can't handle .ts files, Next.js's module system will
+// Turbopack should handle TypeScript resolution during build
 const indexJs = `module.exports = require('../client');
 `;
 fs.writeFileSync(path.join(defaultPath, 'index.js'), indexJs);
+
+// Copy all necessary files to default directory so they can be resolved
+// This ensures Turbopack can find the files even if require() can't resolve .ts directly
+if (fs.existsSync(path.join(prismaClientPath, 'client.ts'))) {
+  // Copy TypeScript files
+  ['client.ts', 'models.ts', 'enums.ts', 'commonInputTypes.ts', 'browser.ts'].forEach(file => {
+    const src = path.join(prismaClientPath, file);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, path.join(defaultPath, file));
+    }
+  });
+  
+  // Copy directories recursively
+  const copyDir = (srcDir, destDir) => {
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    const files = fs.readdirSync(srcDir);
+    files.forEach(file => {
+      const srcPath = path.join(srcDir, file);
+      const destPath = path.join(destDir, file);
+      const stat = fs.statSync(srcPath);
+      if (stat.isDirectory()) {
+        copyDir(srcPath, destPath);
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    });
+  };
+  
+  // Copy models and internal directories
+  ['models', 'internal'].forEach(dir => {
+    const srcDir = path.join(prismaClientPath, dir);
+    if (fs.existsSync(srcDir)) {
+      copyDir(srcDir, path.join(defaultPath, dir));
+    }
+  });
+}
 
 console.log('Prisma default directory structure created successfully');
 
