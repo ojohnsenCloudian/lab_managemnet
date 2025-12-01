@@ -43,13 +43,8 @@ COPY --from=builder /app/public ./public
 
 # Copy Next.js build output
 # Standalone output should exist if output: 'standalone' is set in next.config
-RUN if [ -d /app/.next/standalone ]; then
-  COPY --from=builder /app/.next/standalone ./
-  COPY --from=builder /app/.next/static ./.next/static
-else
-  # Fallback: copy full .next directory if standalone doesn't exist
-  COPY --from=builder /app/.next ./.next
-fi
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Copy Prisma files
 COPY --from=builder /app/prisma ./prisma
