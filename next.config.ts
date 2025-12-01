@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   // Configure webpack to handle native modules properly
-  // This will be used if Turbopack is disabled or falls back to webpack
+  // We use --webpack flag to force webpack instead of Turbopack
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Mark ssh2 and all its submodules as external
@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  // Add empty turbopack config to silence the warning
+  turbopack: {},
 };
 
 export default nextConfig;
