@@ -1,25 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: [
-    '@prisma/client',
-    'prisma',
-    'ssh2',
-  ],
+  serverExternalPackages: ['@prisma/client', 'prisma', 'ssh2'],
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      const originalExternals = config.externals;
-      config.externals = [
-        ...(Array.isArray(originalExternals) ? originalExternals : [originalExternals]),
-        ({ request }: { request?: string }) => {
-          if (request && (request === 'ssh2' || request.startsWith('ssh2/'))) {
-            return `commonjs ${request}`;
-          }
-        },
-      ];
+      config.externals = config.externals || [];
+      config.externals.push('ssh2');
     }
     return config;
   },

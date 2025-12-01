@@ -13,11 +13,10 @@ export default async function AdminDashboard() {
     redirect("/guides");
   }
 
-  const [guidesCount, usersCount, sshCount, oauthEnabled] = await Promise.all([
+  const [guidesCount, usersCount, sshCount] = await Promise.all([
     db.labGuide.count(),
     db.user.count(),
     db.sSHCredential.count(),
-    db.oAuthProvider.findFirst({ where: { isEnabled: true } }),
   ]);
 
   return (
@@ -26,77 +25,77 @@ export default async function AdminDashboard() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Lab Guides
-            </CardTitle>
-            <CardDescription>Total lab guides</CardDescription>
+            <CardTitle>Lab Guides</CardTitle>
+            <CardDescription>Total guides in system</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{guidesCount}</div>
-            <Link href="/admin/guides">
-              <Button variant="link" className="p-0 mt-2">
-                Manage guides →
-              </Button>
-            </Link>
+            <div className="text-2xl font-bold">{guidesCount}</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Users
-            </CardTitle>
+            <CardTitle>Users</CardTitle>
             <CardDescription>Total users</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{usersCount}</div>
-            <Link href="/admin/users">
-              <Button variant="link" className="p-0 mt-2">
-                Manage users →
-              </Button>
-            </Link>
+            <div className="text-2xl font-bold">{usersCount}</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Terminal className="h-5 w-5" />
-              SSH Credentials
-            </CardTitle>
+            <CardTitle>SSH Credentials</CardTitle>
             <CardDescription>Total SSH credentials</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{sshCount}</div>
-            <Link href="/admin/ssh">
-              <Button variant="link" className="p-0 mt-2">
-                Manage credentials →
-              </Button>
-            </Link>
+            <div className="text-2xl font-bold">{sshCount}</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              OAuth
-            </CardTitle>
-            <CardDescription>OAuth provider status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {oauthEnabled ? "Enabled" : "Disabled"}
-            </div>
-            <Link href="/admin/oauth">
-              <Button variant="link" className="p-0 mt-2">
-                Configure →
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      </div>
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <Link href="/admin/guides">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Lab Guides
+              </CardTitle>
+              <CardDescription>Manage lab guides</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href="/admin/oauth">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                OAuth Settings
+              </CardTitle>
+              <CardDescription>Configure OAuth provider</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href="/admin/ssh">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Terminal className="h-5 w-5" />
+                SSH Credentials
+              </CardTitle>
+              <CardDescription>Manage SSH credentials</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href="/admin/users">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Users
+              </CardTitle>
+              <CardDescription>View all users</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
       </div>
     </div>
   );

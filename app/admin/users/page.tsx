@@ -1,7 +1,7 @@
 import { auth } from "@/src/lib/auth";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/src/lib/db";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminUsersPage() {
   const session = await auth();
@@ -23,27 +23,14 @@ export default async function AdminUsersPage() {
         {users.map((user) => (
           <Card key={user.id}>
             <CardHeader>
-              <CardTitle>{user.name || "Unnamed User"}</CardTitle>
-              <CardDescription>{user.email || "No email"}</CardDescription>
+              <CardTitle>{user.name || user.email}</CardTitle>
+              <CardDescription>
+                {user.isAdmin ? "Admin" : "User"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="font-medium">Role: </span>
-                  {user.isAdmin ? (
-                    <span className="text-red-600">Admin</span>
-                  ) : (
-                    <span className="text-gray-600">User</span>
-                  )}
-                </div>
-                <div>
-                  <span className="font-medium">Provider: </span>
-                  {user.oauthProvider || "Credentials"}
-                </div>
-                <div>
-                  <span className="font-medium">Created: </span>
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </div>
+              <div className="text-sm text-muted-foreground">
+                Email: {user.email || "No email"}
               </div>
             </CardContent>
           </Card>

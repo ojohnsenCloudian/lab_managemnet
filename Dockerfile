@@ -7,7 +7,7 @@ RUN apk add --no-cache libc6-compat python3 make g++ git
 WORKDIR /app
 
 # Copy package files
-COPY package.json ./
+COPY package.json package-lock.json* ./
 
 # Install dependencies
 RUN npm install
@@ -22,23 +22,8 @@ ENV NODE_ENV=production
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build the application (migrations will be applied at runtime)
-RUN echo "=== Starting Next.js build ===" && \
-    npm run build 2>&1 | tee /tmp/build.log || true && \
-    echo "=== Build output ===" && \
-    cat /tmp/build.log && \
-    echo "=== Checking for errors ===" && \
-    grep -i "error\|failed\|fail" /tmp/build.log || echo "No errors in log" && \
-    echo "=== Checking .next directory ===" && \
-    ls -la .next/ && \
-    find .next -type f -o -type d | head -30 && \
-    if [ ! -d ".next/server" ]; then \
-      echo "✗ ERROR: .next/server missing!"; \
-      echo "Build log shows:"; \
-      tail -50 /tmp/build.log; \
-      exit 1; \
-    fi && \
-    echo "✓ Build successful - .next/server exists"
+# Build the application
+RUN npm run build
 
 # Expose port
 EXPOSE 8950
