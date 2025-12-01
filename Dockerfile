@@ -22,8 +22,18 @@ ENV DATABASE_URL="file:./prisma/dev.db"
 # Generate Prisma Client (must be done before build)
 RUN npx prisma generate
 
+# Create default directory structure that @prisma/client expects
+# Prisma 7 requires a 'default' subdirectory - symlink to parent directory
+RUN mkdir -p node_modules/.prisma/client/default && \
+    cp node_modules/.prisma/client/client.ts node_modules/.prisma/client/default/index.ts && \
+    cp node_modules/.prisma/client/models.ts node_modules/.prisma/client/default/models.ts && \
+    cp -r node_modules/.prisma/client/models node_modules/.prisma/client/default/ && \
+    cp -r node_modules/.prisma/client/internal node_modules/.prisma/client/default/ && \
+    cp node_modules/.prisma/client/enums.ts node_modules/.prisma/client/default/enums.ts && \
+    cp node_modules/.prisma/client/commonInputTypes.ts node_modules/.prisma/client/default/commonInputTypes.ts
+
 # Verify Prisma Client was generated
-RUN test -d node_modules/.prisma/client && echo "Prisma client generated successfully" || (echo "ERROR: Prisma client not found" && exit 1)
+RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)
 
 # Build the application
 RUN npm run build
