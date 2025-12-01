@@ -1,7 +1,6 @@
 import { db } from "@/src/lib/db";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { encode } from "@auth/core/jwt";
 import { getBaseUrl } from "@/src/lib/url-helper";
 
 export async function GET(request: Request) {
@@ -81,23 +80,79 @@ export async function GET(request: Request) {
     // Since we can't use signIn without a provider, we'll create the session cookie directly
     const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
     if (!secret) {
+      console.error("NEXTAUTH_SECRET is not set!");
       throw new Error("NEXTAUTH_SECRET is not set");
     }
 
-    // Create JWT token for the session
-    const { encode } = await import("@auth/core/jwt");
-    const sessionToken = await encode({
-      token: {
+    console.log("Creating session token for user:", user.id, user.email);
+
+    // Create session by calling NextAuth's signIn function
+    // We'll use a workaround: create a temporary password for OAuth users
+    // or use NextAuth's internal session creation
+    
+    // Actually, let's use a simpler approach: create the session cookie
+    // using the same method NextAuth uses internally
+    let sessionToken: string;
+    try {
+      // Import jwt from @auth/core
+      const { encode } = await import("@auth/core/jwt");
+      
+      // Create token payload
+      const now = Math.floor(Date.now() / 1000);
+      const token = {
         sub: user.id,
         email: user.email,
         name: user.name,
         id: user.id,
-        isAdmin: user.isAdmin,
-        passwordChangeRequired: user.passwordChangeRequired,
-      },
-      secret,
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-    });
+        isAdmin: user.isAdmin ?? false,
+        passwordChangeRequired: user.passwordChangeRequired ?? false,
+        iat: now,
+        exp: now + (60 * 60 * 24 * 30), // 30 days
+      };
+
+      // Encode with salt (NextAuth v5 uses salt for session tokens)
+      sessionToken = await encode({
+        token,
+        secret,
+        salt: "authjs.session-token",
+      });
+      
+      console.log("Session token created, length:", sessionToken.length);
+    } catch (encodeError: any) {
+      console.error("JWT encoding failed:", {
+        error: encodeError?.message || String(encodeError),
+        stack: encodeError?.stack,
+        secretExists: !!secret,
+        secretLength: secret?.length,
+      });
+      
+      // Fallback: try without salt
+      try {
+        const { encode } = await import("@auth/core/jwt");
+        const now = Math.floor(Date.now() / 1000);
+        sessionToken = await encode({
+          token: {
+            sub: user.id,
+            email: user.email,
+            name: user.name,
+            id: user.id,
+            isAdmin: user.isAdmin ?? false,
+            passwordChangeRequired: user.passwordChangeRequired ?? false,
+            iat: now,
+            exp: now + (60 * 60 * 24 * 30),
+          },
+          secret,
+        });
+        console.log("Session token created (fallback), length:", sessionToken.length);
+      } catch (fallbackError) {
+        console.error("Fallback JWT encoding also failed:", fallbackError);
+        throw new Error(`JWT encoding failed: ${encodeError?.message || String(encodeError)}`);
+      }
+    }
+    
+    if (!sessionToken) {
+      throw new Error("Session token is empty after encoding");
+    }
 
     const response = NextResponse.redirect(new URL(callbackUrl, baseUrl));
     // Clean up OAuth token cookie
@@ -136,9 +191,14 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error("OAuth completion error:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     const baseUrl = getBaseUrl(request);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_completion_failed`, baseUrl)
+      new URL(`/login?error=oauth_completion_failed&details=${encodeURIComponent(errorMessage)}`, baseUrl)
     );
   }
 }

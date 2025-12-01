@@ -75,6 +75,11 @@ function LoginForm() {
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                 {error}
+                {error.includes("oauth_completion_failed") && (
+                  <div className="mt-2 text-xs">
+                    Check server logs for details. This usually indicates a session creation issue.
+                  </div>
+                )}
               </div>
             )}
             {success && (
