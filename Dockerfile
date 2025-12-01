@@ -23,14 +23,13 @@ ENV DATABASE_URL="file:./prisma/dev.db"
 RUN npx prisma generate
 
 # Create default directory structure that @prisma/client expects
-# Prisma 7 requires a 'default' subdirectory - symlink to parent directory
+# Prisma 7 requires a 'default' subdirectory - copy all files
 RUN mkdir -p node_modules/.prisma/client/default && \
-    cp node_modules/.prisma/client/client.ts node_modules/.prisma/client/default/index.ts && \
-    cp node_modules/.prisma/client/models.ts node_modules/.prisma/client/default/models.ts && \
-    cp -r node_modules/.prisma/client/models node_modules/.prisma/client/default/ && \
-    cp -r node_modules/.prisma/client/internal node_modules/.prisma/client/default/ && \
-    cp node_modules/.prisma/client/enums.ts node_modules/.prisma/client/default/enums.ts && \
-    cp node_modules/.prisma/client/commonInputTypes.ts node_modules/.prisma/client/default/commonInputTypes.ts
+    cp -r node_modules/.prisma/client/* node_modules/.prisma/client/default/ 2>/dev/null || true && \
+    rm -rf node_modules/.prisma/client/default/default 2>/dev/null || true && \
+    echo "export * from './client';" > node_modules/.prisma/client/default/index.d.ts && \
+    echo "export * from './models';" >> node_modules/.prisma/client/default/index.d.ts && \
+    echo "module.exports = require('./client');" > node_modules/.prisma/client/default/index.js
 
 # Verify Prisma Client was generated
 RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)
