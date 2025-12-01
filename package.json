@@ -8,9 +8,10 @@
     "start": "next start -p 8950",
     "lint": "eslint",
     "init-admin": "tsx scripts/init-admin.ts",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate && node scripts/setup-prisma-default.js",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "postinstall": "node scripts/setup-prisma-default.js"
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
