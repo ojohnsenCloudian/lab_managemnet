@@ -24,20 +24,23 @@ RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
 RUN echo "=== Starting Next.js build ===" && \
-    (npm run build 2>&1 | tee /tmp/build.log) && \
-    echo "=== Build command completed ===" && \
-    echo "=== Checking .next directory ===" && \
+    echo "=== Checking critical files ===" && \
+    test -f "app/layout.tsx" && echo "✓ app/layout.tsx exists" || echo "✗ app/layout.tsx missing" && \
+    test -f "app/page.tsx" && echo "✓ app/page.tsx exists" || echo "✗ app/page.tsx missing" && \
+    test -f "next.config.ts" && echo "✓ next.config.ts exists" || echo "✗ next.config.ts missing" && \
+    test -f "tsconfig.json" && echo "✓ tsconfig.json exists" || echo "✗ tsconfig.json missing" && \
+    echo "=== Running Next.js build with timeout ===" && \
+    timeout 60 npm run build || (echo "Build timed out or failed" && exit 1) && \
+    echo "=== Build completed, checking .next ===" && \
     ls -la .next/ && \
     echo "=== Checking for server directory ===" && \
-    if [ ! -d ".next/server" ]; then \
-      echo "✗ .next/server missing!"; \
-      echo "=== Last 100 lines of build log ==="; \
-      tail -100 /tmp/build.log; \
-      echo "=== Checking for error patterns ==="; \
-      grep -i "error\|failed\|fail" /tmp/build.log | tail -20 || echo "No obvious errors found"; \
-      exit 1; \
-    fi && \
-    echo "✓ Build successful - .next/server exists"
+    (test -d ".next/server" && echo "✓ .next/server exists" && ls -la .next/server/ | head -10) || \
+    (echo "✗ .next/server missing!" && \
+     echo "=== Checking what was built ===" && \
+     find .next -type f 2>/dev/null | head -30 && \
+     echo "=== Checking for any log files ===" && \
+     find .next -name "*.log" 2>/dev/null && \
+     exit 1)
 
 # Expose port
 EXPOSE 8950
