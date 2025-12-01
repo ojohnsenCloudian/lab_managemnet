@@ -24,23 +24,34 @@ RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
 RUN echo "=== Starting Next.js build ===" && \
-    echo "=== Checking critical files ===" && \
-    test -f "app/layout.tsx" && echo "✓ app/layout.tsx exists" || echo "✗ app/layout.tsx missing" && \
-    test -f "app/page.tsx" && echo "✓ app/page.tsx exists" || echo "✗ app/page.tsx missing" && \
-    test -f "next.config.ts" && echo "✓ next.config.ts exists" || echo "✗ next.config.ts missing" && \
-    test -f "tsconfig.json" && echo "✓ tsconfig.json exists" || echo "✗ tsconfig.json missing" && \
-    echo "=== Running Next.js build with timeout ===" && \
-    timeout 60 npm run build || (echo "Build timed out or failed" && exit 1) && \
-    echo "=== Build completed, checking .next ===" && \
+    npm run build 2>&1; \
+    BUILD_EXIT=$?; \
+    echo "=== Build exit code: $BUILD_EXIT ===" && \
+    echo "=== Checking diagnostics ===" && \
+    if [ -f ".next/diagnostics/build-diagnostics.json" ]; then \
+      echo "Build diagnostics:"; \
+      cat .next/diagnostics/build-diagnostics.json; \
+    fi && \
+    if [ -f ".next/diagnostics/framework.json" ]; then \
+      echo "Framework diagnostics:"; \
+      cat .next/diagnostics/framework.json; \
+    fi && \
+    echo "=== Checking .next directory ===" && \
     ls -la .next/ && \
     echo "=== Checking for server directory ===" && \
-    (test -d ".next/server" && echo "✓ .next/server exists" && ls -la .next/server/ | head -10) || \
-    (echo "✗ .next/server missing!" && \
-     echo "=== Checking what was built ===" && \
-     find .next -type f 2>/dev/null | head -30 && \
-     echo "=== Checking for any log files ===" && \
-     find .next -name "*.log" 2>/dev/null && \
-     exit 1)
+    if [ ! -d ".next/server" ]; then \
+      echo "✗ .next/server missing!"; \
+      echo "Build exit code was: $BUILD_EXIT"; \
+      if [ $BUILD_EXIT -ne 0 ]; then \
+        echo "Build failed with exit code $BUILD_EXIT"; \
+      else \
+        echo "Build completed but server directory missing - checking for errors"; \
+      fi; \
+      echo "=== All files in .next ==="; \
+      find .next -type f 2>/dev/null; \
+      exit 1; \
+    fi && \
+    echo "✓ Build successful - .next/server exists"
 
 # Expose port
 EXPOSE 8950

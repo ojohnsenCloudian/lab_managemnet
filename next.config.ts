@@ -1,14 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,
+  // Temporarily disable reactCompiler to see if it's causing issues
+  // reactCompiler: true,
   serverExternalPackages: [
     '@prisma/client',
     'prisma',
     'ssh2',
   ],
   typescript: {
-    ignoreBuildErrors: true, // Temporarily ignore to see if this is the issue
+    ignoreBuildErrors: true,
   },
   // Empty turbopack config to silence error when using webpack
   turbopack: {},
