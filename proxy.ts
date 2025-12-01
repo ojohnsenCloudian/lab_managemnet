@@ -2,41 +2,46 @@ import { auth } from '@/src/lib/auth';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const session = req.auth;
+export async function middleware(request: NextRequest) {
+  const session = await auth();
+  const { pathname } = request.nextUrl;
 
   // Public routes
-  if (pathname.startsWith('/api/auth') || pathname === '/login') {
+  if (pathname === '/login' || pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
-  // Redirect to login if not authenticated
-  if (!session) {
-    const loginUrl = new URL('/login', req.url);
+  // Require authentication
+  if (!session?.user) {
+    const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Check if password change is required
-  if (session.user?.passwordChangeRequired && pathname !== '/change-password') {
-    return NextResponse.redirect(new URL('/change-password', req.url));
+  if (session.user.passwordChangeRequired && pathname !== '/change-password') {
+    return NextResponse.redirect(new URL('/change-password', request.url));
   }
 
-  // Allow access to change-password page
-  if (pathname === '/change-password') {
-    return NextResponse.next();
-  }
-
-  // Admin routes protection
-  if (pathname.startsWith('/admin') && !session.user?.isAdmin) {
-    return NextResponse.redirect(new URL('/guides', req.url));
+  // Admin routes
+  if (pathname.startsWith('/admin')) {
+    if (!session.user.isAdmin) {
+      return NextResponse.redirect(new URL('/guides', request.url));
+    }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)',
+  ],
 };
-

@@ -25,7 +25,7 @@ export default function ChangePasswordPage() {
     }
 
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
+      setError("New password must be at least 8 characters");
       return;
     }
 
@@ -45,13 +45,14 @@ export default function ChangePasswordPage() {
 
       if (!response.ok) {
         setError(data.error || "Failed to change password");
-      } else {
-        router.push("/guides");
-        router.refresh();
+        setLoading(false);
+        return;
       }
+
+      router.push("/guides");
+      router.refresh();
     } catch (err) {
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -114,4 +115,3 @@ export default function ChangePasswordPage() {
     </div>
   );
 }
-

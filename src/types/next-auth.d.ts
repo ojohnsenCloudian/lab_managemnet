@@ -1,10 +1,8 @@
-import "next-auth";
-import "next-auth/jwt";
+import 'next-auth';
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface User {
-    id: string;
-    isAdmin?: boolean;
+    isAdmin: boolean;
     passwordChangeRequired?: boolean;
   }
 
@@ -13,17 +11,16 @@ declare module "next-auth" {
       id: string;
       email?: string | null;
       name?: string | null;
-      isAdmin?: boolean;
+      isAdmin: boolean;
       passwordChangeRequired?: boolean;
     };
   }
 }
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   interface JWT {
-    id?: string;
-    isAdmin?: boolean;
+    id: string;
+    isAdmin: boolean;
     passwordChangeRequired?: boolean;
   }
 }
-

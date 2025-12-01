@@ -19,4 +19,7 @@ coverage
 .nyc_output
 dist
 build
-
+dev.db
+*.db
+*.db-journal
+tsconfig.tsbuildinfo

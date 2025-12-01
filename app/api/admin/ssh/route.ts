@@ -1,30 +1,26 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
-import { db } from "@/src/lib/db";
-import { encrypt } from "@/src/lib/encryption";
+import { auth } from '@/src/lib/auth';
+import { db } from '@/src/lib/db';
+import { encrypt } from '@/src/lib/encryption';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const credentials = await db.sSHCredential.findMany({
-      select: {
-        id: true,
-        name: true,
-        host: true,
-        port: true,
-        username: true,
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
-    return NextResponse.json(credentials);
+    return NextResponse.json({ credentials });
   } catch (error) {
-    console.error("Error fetching SSH credentials:", error);
+    console.error('Get SSH credentials error:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -34,22 +30,15 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name, host, port, username, password, privateKey, labGuideId } = body;
+    const data = await request.json();
+    const { name, host, port, username, password, privateKey, labGuideId } = data;
 
-    if (!name || !host || !username) {
+    if (!name || !host || !username || (!password && !privateKey)) {
       return NextResponse.json(
-        { error: "Name, host, and username are required" },
-        { status: 400 }
-      );
-    }
-
-    if (!password && !privateKey) {
-      return NextResponse.json(
-        { error: "Either password or private key is required" },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -66,19 +55,12 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({
-      id: credential.id,
-      name: credential.name,
-      host: credential.host,
-      port: credential.port,
-      username: credential.username,
-    });
+    return NextResponse.json({ credential });
   } catch (error) {
-    console.error("Error creating SSH credential:", error);
+    console.error('Create SSH credential error:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
-

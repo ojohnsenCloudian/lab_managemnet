@@ -5,7 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # Will automatically build for the host architecture (ARM64 on Raspberry Pi 5)
     ports:
       - "8950:8950"
     environment:
@@ -17,4 +16,3 @@ services:
     volumes:
       - ./prisma/dev.db:/app/prisma/dev.db
     restart: unless-stopped
-

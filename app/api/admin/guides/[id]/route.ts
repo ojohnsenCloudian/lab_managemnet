@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
-import { db } from "@/src/lib/db";
+import { auth } from '@/src/lib/auth';
+import { db } from '@/src/lib/db';
+import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
@@ -9,26 +9,32 @@ export async function GET(
   try {
     const session = await auth();
     if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
     const guide = await db.labGuide.findUnique({
       where: { id },
+      include: {
+        createdBy: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        sshConfigs: true,
+      },
     });
 
     if (!guide) {
-      return NextResponse.json(
-        { error: "Guide not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Guide not found' }, { status: 404 });
     }
 
-    return NextResponse.json(guide);
+    return NextResponse.json({ guide });
   } catch (error) {
-    console.error("Error fetching guide:", error);
+    console.error('Get guide error:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -41,36 +47,29 @@ export async function PUT(
   try {
     const session = await auth();
     if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
-    const body = await request.json();
-    const { title, description, content, steps, isPublished } = body;
-
-    if (!title || !content) {
-      return NextResponse.json(
-        { error: "Title and content are required" },
-        { status: 400 }
-      );
-    }
+    const data = await request.json();
+    const { title, description, content, steps, isPublished } = data;
 
     const guide = await db.labGuide.update({
       where: { id },
       data: {
-        title,
-        description: description || null,
-        content,
-        steps: JSON.stringify(steps || []),
-        isPublished: isPublished || false,
+        ...(title && { title }),
+        ...(description !== undefined && { description }),
+        ...(content && { content }),
+        ...(steps !== undefined && { steps }),
+        ...(isPublished !== undefined && { isPublished }),
       },
     });
 
-    return NextResponse.json(guide);
+    return NextResponse.json({ guide });
   } catch (error) {
-    console.error("Error updating guide:", error);
+    console.error('Update guide error:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -83,7 +82,7 @@ export async function DELETE(
   try {
     const session = await auth();
     if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -93,11 +92,10 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting guide:", error);
+    console.error('Delete guide error:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
-

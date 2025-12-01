@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
-import { db } from "@/src/lib/db";
-import { decrypt } from "@/src/lib/encryption";
-import { getClient } from "@/src/lib/ssh2-loader";
-import type { ClientChannel } from "@/src/lib/ssh2-loader";
+import { NextResponse } from 'next/server';
+import { auth } from '@/src/lib/auth';
+import { db } from '@/src/lib/db';
+import { decrypt } from '@/src/lib/encryption';
+import { getClient } from '@/src/lib/ssh2-loader';
+import type { ClientChannel } from '@/src/lib/ssh2-loader';
 
 const Client = getClient();
 const connections = new Map<string, InstanceType<typeof Client>>();
@@ -15,7 +15,7 @@ export async function GET(
   try {
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -25,7 +25,7 @@ export async function GET(
 
     if (!credential) {
       return NextResponse.json(
-        { error: "Credential not found" },
+        { error: 'Credential not found' },
         { status: 404 }
       );
     }
@@ -34,7 +34,7 @@ export async function GET(
     connections.set(id, conn);
 
     return new Promise<Response>((resolve, reject) => {
-      conn.on("ready", () => {
+      conn.on('ready', () => {
         conn.shell((err: Error | undefined, stream: ClientChannel) => {
           if (err) {
             reject(err);
@@ -43,15 +43,15 @@ export async function GET(
 
           const readableStream = new ReadableStream({
             start(controller) {
-              stream.on("data", (data: Buffer) => {
+              stream.on('data', (data: Buffer) => {
                 controller.enqueue(new Uint8Array(data));
               });
 
-              stream.on("close", () => {
+              stream.on('close', () => {
                 controller.close();
               });
 
-              stream.on("error", (err: Error) => {
+              stream.on('error', (err: Error) => {
                 controller.error(err);
               });
             },
@@ -60,14 +60,14 @@ export async function GET(
           resolve(
             new Response(readableStream, {
               headers: {
-                "Content-Type": "text/plain",
+                'Content-Type': 'text/plain',
               },
             })
           );
         });
       });
 
-      conn.on("error", (err: Error) => {
+      conn.on('error', (err: Error) => {
         reject(err);
       });
 
@@ -86,9 +86,9 @@ export async function GET(
       conn.connect(config);
     });
   } catch (error) {
-    console.error("SSH connection error:", error);
+    console.error('SSH connection error:', error);
     return NextResponse.json(
-      { error: "Failed to connect" },
+      { error: 'Failed to connect' },
       { status: 500 }
     );
   }
@@ -101,7 +101,7 @@ export async function POST(
   try {
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -116,9 +116,8 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
-

@@ -3,15 +3,33 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { db } from './db';
 import bcrypt from 'bcryptjs';
-import type { Adapter } from 'next-auth/adapters';
+import type { OAuthConfig } from '@auth/core/providers';
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(db) as Adapter,
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(db),
   session: {
     strategy: 'jwt',
   },
   pages: {
     signIn: '/login',
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = user.isAdmin || false;
+        token.passwordChangeRequired = user.passwordChangeRequired || false;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin || false;
+        session.user.passwordChangeRequired = token.passwordChangeRequired || false;
+      }
+      return session;
+    },
   },
   providers: [
     Credentials({
@@ -52,95 +70,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.id = user.id;
-        token.isAdmin = user.isAdmin;
-        token.passwordChangeRequired = user.passwordChangeRequired;
-      }
-
-      // Handle OAuth login (Authentik)
-      if (account?.provider === 'authentik' && account?.access_token) {
-        try {
-          const oauthProvider = await db.oAuthProvider.findUnique({
-            where: { name: 'authentik' },
-          });
-
-          if (oauthProvider) {
-            const response = await fetch(oauthProvider.userInfoUrl, {
-              headers: {
-                Authorization: `Bearer ${account.access_token}`,
-              },
-            });
-            const profile = await response.json();
-
-            const dbUser = await db.user.upsert({
-              where: { email: profile.email },
-              update: {
-                oauthProviderId: profile.sub,
-                oauthProvider: 'authentik',
-                name: profile.name || profile.preferred_username,
-              },
-              create: {
-                email: profile.email,
-                name: profile.name || profile.preferred_username,
-                oauthProviderId: profile.sub,
-                oauthProvider: 'authentik',
-                isAdmin: false,
-                passwordChangeRequired: false,
-              },
-            });
-
-            token.id = dbUser.id;
-            token.isAdmin = dbUser.isAdmin;
-            token.passwordChangeRequired = dbUser.passwordChangeRequired;
-          }
-        } catch (error) {
-          console.error('Error fetching user info from Authentik:', error);
-        }
-      }
-
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token) {
-        session.user.id = token.id as string;
-        session.user.isAdmin = token.isAdmin ?? false;
-        session.user.passwordChangeRequired = token.passwordChangeRequired ?? false;
-      }
-      return session;
-    },
-  },
 });
 
-// Helper function to add Authentik provider dynamically
+// Helper function to add Authentik OAuth provider dynamically
 export async function addAuthentikProvider(config: {
   clientId: string;
   clientSecret: string;
   issuer: string;
-  authorizationUrl: string;
-  tokenUrl: string;
-  userInfoUrl: string;
-}) {
-  await db.oAuthProvider.upsert({
-    where: { name: 'authentik' },
-    update: {
-      clientId: config.clientId,
-      clientSecret: config.clientSecret,
-      authorizationUrl: config.authorizationUrl,
-      tokenUrl: config.tokenUrl,
-      userInfoUrl: config.userInfoUrl,
-      isEnabled: true,
+}): Promise<OAuthConfig<any>> {
+  return {
+    id: 'authentik',
+    name: 'Authentik',
+    type: 'oauth',
+    authorization: {
+      url: `${config.issuer}/application/o/authorize/`,
+      params: {
+        scope: 'openid profile email',
+        response_type: 'code',
+      },
     },
-    create: {
-      name: 'authentik',
-      clientId: config.clientId,
-      clientSecret: config.clientSecret,
-      authorizationUrl: config.authorizationUrl,
-      tokenUrl: config.tokenUrl,
-      userInfoUrl: config.userInfoUrl,
-      isEnabled: true,
+    token: `${config.issuer}/application/o/token/`,
+    userinfo: `${config.issuer}/application/o/userinfo/`,
+    clientId: config.clientId,
+    clientSecret: config.clientSecret,
+    profile(profile: any) {
+      return {
+        id: profile.sub || profile.id,
+        name: profile.name || profile.preferred_username,
+        email: profile.email,
+      };
     },
-  });
+  };
 }

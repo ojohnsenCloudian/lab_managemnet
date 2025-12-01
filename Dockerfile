@@ -1,47 +1,32 @@
-# Multi-stage build for production
-# Supports ARM64 (Raspberry Pi 5) and AMD64 architectures
+# Multi-stage Docker build for Raspberry Pi 5 (ARM64)
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
+# Install dependencies stage
 FROM base AS deps
-# Install build dependencies needed for native modules (ssh2, bcryptjs, etc.) on ARM64
+# Install build dependencies for native modules (ssh2, bcryptjs) on ARM64
 RUN apk add --no-cache libc6-compat python3 make g++ git
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-# npm will automatically build native modules for the target architecture
 RUN npm ci
 
-# Rebuild the source code only when needed
+# Build stage
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set DATABASE_URL for Prisma generation (required for Prisma 7)
+# Set DATABASE_URL for Prisma generation
 ENV DATABASE_URL="file:./prisma/dev.db"
 
-# Generate Prisma Client (must be done before build)
+# Generate Prisma Client
 RUN npx prisma generate
 
-# Run setup script to create default directory structure
-# This creates index.js that uses tsx to load TypeScript files at runtime
-RUN node scripts/setup-prisma-default.js
-
-# Verify the default directory structure was created
-RUN test -f node_modules/.prisma/client/default/index.js && \
-    echo "Default directory structure created successfully" || \
-    (echo "ERROR: Default directory structure not created properly" && exit 1)
-
-# Verify Prisma Client was generated
-RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)
-
-# Build the application
-# Note: Next.js 16 uses Turbopack by default, but webpack config should handle ssh2 as external
+# Build the application (using webpack for native module support)
 RUN npm run build
 
-# Production image, copy all the files and run next
+# Production stage
 FROM base AS runner
 WORKDIR /app
 
@@ -60,7 +45,6 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/scripts ./scripts
 
 # Make startup script executable
@@ -74,4 +58,3 @@ ENV PORT=8950
 ENV HOSTNAME="0.0.0.0"
 
 CMD ["/app/scripts/start.sh"]
-

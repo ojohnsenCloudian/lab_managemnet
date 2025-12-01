@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Run Prisma migrations to ensure database is up to date
+echo "Running Prisma migrations..."
+npx prisma migrate deploy || echo "Migrations may have failed, continuing..."
+
 # Initialize admin user if it doesn't exist
 if [ ! -f /app/.admin-initialized ]; then
   echo "Initializing admin user..."
@@ -9,4 +13,3 @@ fi
 
 # Start the application
 exec node server.js
-
