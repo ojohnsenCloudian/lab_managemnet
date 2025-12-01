@@ -8,7 +8,7 @@ const connections = new Map<string, Client>();
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -16,8 +16,9 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const credential = await db.sSHCredential.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!credential) {
@@ -28,7 +29,7 @@ export async function GET(
     }
 
     const conn = new Client();
-    connections.set(params.id, conn);
+    connections.set(id, conn);
 
     return new Promise((resolve, reject) => {
       conn.on("ready", () => {
@@ -93,7 +94,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -101,8 +102,9 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const { data } = await request.json();
-    const conn = connections.get(params.id);
+    const conn = connections.get(id);
 
     if (conn) {
       // Send data to SSH connection

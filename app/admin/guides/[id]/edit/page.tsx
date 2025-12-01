@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/guides/rich-text-editor";
 
-export default function EditGuidePage({ params }: { params: { id: string } }) {
+export default function EditGuidePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id: guideId } = use(params);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
@@ -21,12 +22,12 @@ export default function EditGuidePage({ params }: { params: { id: string } }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    loadGuide();
-  }, []);
+    loadGuide(guideId);
+  }, [guideId]);
 
-  const loadGuide = async () => {
+  const loadGuide = async (id: string) => {
     try {
-      const response = await fetch(`/api/admin/guides/${params.id}`);
+      const response = await fetch(`/api/admin/guides/${id}`);
       if (response.ok) {
         const guide = await response.json();
         setTitle(guide.title);
@@ -48,7 +49,7 @@ export default function EditGuidePage({ params }: { params: { id: string } }) {
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/admin/guides/${params.id}`, {
+      const response = await fetch(`/api/admin/guides/${guideId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

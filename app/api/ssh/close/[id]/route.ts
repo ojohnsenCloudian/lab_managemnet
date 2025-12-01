@@ -5,7 +5,7 @@ const connections = new Map<string, any>();
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -13,10 +13,11 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const conn = connections.get(params.id);
+    const { id } = await params;
+    const conn = connections.get(id);
     if (conn) {
       conn.end();
-      connections.delete(params.id);
+      connections.delete(id);
     }
 
     return NextResponse.json({ success: true });

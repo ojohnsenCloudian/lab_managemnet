@@ -9,7 +9,7 @@ import { TerminalComponent } from "@/components/terminal/terminal-component";
 export default async function GuideViewPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth();
 
@@ -17,8 +17,9 @@ export default async function GuideViewPage({
     redirect("/login");
   }
 
+  const { id } = await params;
   const guide = await db.labGuide.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       sshConfigs: true,
     },
