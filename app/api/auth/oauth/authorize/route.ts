@@ -1,5 +1,6 @@
 import { db } from "@/src/lib/db";
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/src/lib/url-helper";
 
 export async function GET(request: Request) {
   try {
@@ -11,9 +12,11 @@ export async function GET(request: Request) {
       where: { name: "Authentik", isEnabled: true },
     });
 
+    const baseUrl = getBaseUrl(request);
+
     if (!oauthConfig) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_not_configured`, request.url)
+        new URL(`/login?error=oauth_not_configured`, baseUrl)
       );
     }
 
@@ -28,7 +31,6 @@ export async function GET(request: Request) {
     
     // Build authorization URL
     const scope = oauthConfig.scope || "openid profile email";
-    const baseUrl = process.env.NEXTAUTH_URL || new URL(request.url).origin;
     const redirectUri = `${baseUrl}/api/auth/oauth/callback`;
     
     const authUrl = new URL(oauthConfig.authorizationUrl);
@@ -63,8 +65,9 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error("OAuth authorization error:", error);
+    const baseUrl = getBaseUrl(request);
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_failed`, request.url)
+      new URL(`/login?error=oauth_failed`, baseUrl)
     );
   }
 }

@@ -2,6 +2,7 @@ import { db } from "@/src/lib/db";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { encode } from "@auth/core/jwt";
+import { getBaseUrl } from "@/src/lib/url-helper";
 
 export async function GET(request: Request) {
   try {
@@ -12,9 +13,11 @@ export async function GET(request: Request) {
     const cookieStore = await cookies();
     const tokenData = cookieStore.get("oauth_token")?.value;
 
+    const baseUrl = getBaseUrl(request);
+
     if (!tokenData || !token) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_invalid_token`, request.url)
+        new URL(`/login?error=oauth_invalid_token`, baseUrl)
       );
     }
 
@@ -23,7 +26,7 @@ export async function GET(request: Request) {
     // Verify token matches and hasn't expired
     if (parsed.token !== token || Date.now() > parsed.expiry) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_token_expired`, request.url)
+        new URL(`/login?error=oauth_token_expired`, baseUrl)
       );
     }
 
@@ -34,13 +37,9 @@ export async function GET(request: Request) {
 
     if (!user) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_user_not_found`, request.url)
+        new URL(`/login?error=oauth_user_not_found`, baseUrl)
       );
     }
-
-    // Create NextAuth session by calling the internal session API
-    // We'll create a session by making a request to NextAuth's session endpoint
-    const baseUrl = process.env.NEXTAUTH_URL || new URL(request.url).origin;
     
     // Create session by calling NextAuth's callback with user data
     // Since we can't use signIn without a provider, we'll create the session cookie directly
@@ -64,7 +63,7 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
 
-    const response = NextResponse.redirect(new URL(callbackUrl, request.url));
+    const response = NextResponse.redirect(new URL(callbackUrl, baseUrl));
     response.cookies.delete("oauth_token");
     
     // Set NextAuth session cookie (NextAuth v5 uses authjs.session-token)
@@ -83,8 +82,9 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error("OAuth completion error:", error);
+    const baseUrl = getBaseUrl(request);
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_completion_failed`, request.url)
+      new URL(`/login?error=oauth_completion_failed`, baseUrl)
     );
   }
 }

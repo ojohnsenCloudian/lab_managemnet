@@ -2,6 +2,7 @@ import { db } from "@/src/lib/db";
 import { auth, signIn } from "@/src/lib/auth";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getBaseUrl } from "@/src/lib/url-helper";
 
 export async function GET(request: Request) {
   try {
@@ -10,15 +11,17 @@ export async function GET(request: Request) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
+    const baseUrl = getBaseUrl(request);
+
     if (error) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_${error}`, request.url)
+        new URL(`/login?error=oauth_${error}`, baseUrl)
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_invalid`, request.url)
+        new URL(`/login?error=oauth_invalid`, baseUrl)
       );
     }
 
@@ -50,7 +53,7 @@ export async function GET(request: Request) {
           error: error instanceof Error ? error.message : "Unknown error"
         });
         return NextResponse.redirect(
-          new URL(`/login?error=oauth_state_mismatch`, request.url)
+          new URL(`/login?error=oauth_state_mismatch`, baseUrl)
         );
       }
       
@@ -66,12 +69,12 @@ export async function GET(request: Request) {
 
     if (!oauthConfig) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_not_configured`, request.url)
+        new URL(`/login?error=oauth_not_configured`, baseUrl)
       );
     }
 
     // Exchange code for token
-    const redirectUri = `${process.env.NEXTAUTH_URL || new URL(request.url).origin}/api/auth/oauth/callback`;
+    const redirectUri = `${baseUrl}/api/auth/oauth/callback`;
     const tokenResponse = await fetch(oauthConfig.tokenUrl, {
       method: "POST",
       headers: {
@@ -90,7 +93,7 @@ export async function GET(request: Request) {
       const errorText = await tokenResponse.text();
       console.error("Token exchange failed:", errorText);
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_token_failed`, request.url)
+        new URL(`/login?error=oauth_token_failed`, baseUrl)
       );
     }
 
@@ -105,7 +108,7 @@ export async function GET(request: Request) {
 
     if (!userInfoResponse.ok) {
       return NextResponse.redirect(
-        new URL(`/login?error=oauth_userinfo_failed`, request.url)
+        new URL(`/login?error=oauth_userinfo_failed`, baseUrl)
       );
     }
 
@@ -137,7 +140,7 @@ export async function GET(request: Request) {
     
     // Clear OAuth cookies and set OAuth token
     const response = NextResponse.redirect(
-      new URL(`/api/auth/oauth/complete?token=${oauthToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
+      new URL(`/api/auth/oauth/complete?token=${oauthToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`, baseUrl)
     );
     response.cookies.delete("oauth_state");
     response.cookies.delete("oauth_callback");
@@ -151,8 +154,9 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error("OAuth callback error:", error);
+    const baseUrl = getBaseUrl(request);
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_callback_failed`, request.url)
+      new URL(`/login?error=oauth_callback_failed`, baseUrl)
     );
   }
 }
