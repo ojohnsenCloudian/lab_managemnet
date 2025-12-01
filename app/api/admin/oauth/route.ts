@@ -57,7 +57,11 @@ export async function POST(request: Request) {
         isEnabled: isEnabled || false,
       },
     });
-    return NextResponse.json({ provider }, { status: 200 });
+
+    return NextResponse.json({ 
+      provider,
+      message: "OAuth settings saved successfully."
+    }, { status: 200 });
   } catch (error) {
     console.error("Error saving OAuth provider:", error);
     return NextResponse.json({ error: "Failed to save OAuth provider" }, { status: 500 });

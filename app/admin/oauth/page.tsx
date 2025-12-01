@@ -175,6 +175,39 @@ export default function OAuthPage() {
                 Enable OAuth Provider
               </Label>
             </div>
+            
+            {isEnabled && (
+              <div className="p-4 bg-muted rounded-md">
+                <Label className="text-sm font-semibold">Redirect URI (Callback URL)</Label>
+                <div className="mt-2 p-2 bg-background rounded border">
+                  <p className="text-sm font-mono break-all" id="redirectUrl">
+                    {typeof window !== "undefined" 
+                      ? `${window.location.origin}/api/auth/callback/authentik`
+                      : "Loading..."}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    const url = document.getElementById("redirectUrl")?.textContent;
+                    if (url) {
+                      navigator.clipboard.writeText(url);
+                      setSuccess("Redirect URL copied to clipboard!");
+                      setTimeout(() => setSuccess(""), 2000);
+                    }
+                  }}
+                >
+                  Copy Redirect URL
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Copy this URL and add it to your Authentik application&apos;s redirect URIs.
+                </p>
+              </div>
+            )}
+            
             <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Settings"}
             </Button>

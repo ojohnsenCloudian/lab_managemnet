@@ -15,6 +15,7 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthEnabled, setOauthEnabled] = useState(false);
 
   const callbackUrl = searchParams.get("callbackUrl") || "/guides";
   const passwordChanged = searchParams.get("passwordChanged") === "true";
@@ -23,6 +24,16 @@ function LoginForm() {
     if (passwordChanged) {
       setSuccess("Password changed successfully! Please sign in with your new password.");
     }
+    
+    // Check if OAuth is enabled
+    fetch("/api/auth/oauth-config")
+      .then((res) => res.json())
+      .then((data) => {
+        setOauthEnabled(data.enabled || false);
+      })
+      .catch(() => {
+        setOauthEnabled(false);
+      });
   }, [passwordChanged]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,6 +108,25 @@ function LoginForm() {
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+          
+          {oauthEnabled && (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+              <form action="/api/auth/signin/authentik" method="POST">
+                <input type="hidden" name="callbackUrl" value={callbackUrl} />
+                <Button type="submit" variant="outline" className="w-full">
+                  Sign in with Authentik
+                </Button>
+              </form>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
