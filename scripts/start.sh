@@ -12,4 +12,10 @@ if [ ! -f /app/.admin-initialized ]; then
 fi
 
 # Start the application
-exec node server.js
+# With standalone output, server.js is in the root
+if [ -f server.js ]; then
+  exec node server.js
+else
+  # Fallback to next start if standalone wasn't created
+  exec node_modules/.bin/next start -p 8950
+fi
