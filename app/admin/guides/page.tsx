@@ -6,15 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { DeleteGuideButton } from "./delete-button";
-import type { Prisma } from "@prisma/client";
-
-type GuideWithCreator = Prisma.LabGuideGetPayload<{
-  include: {
-    createdBy: {
-      select: { name: true; email: true };
-    };
-  };
-}>;
 
 export default async function AdminGuidesPage() {
   const session = await auth();
@@ -31,6 +22,8 @@ export default async function AdminGuidesPage() {
       },
     },
   });
+
+  type GuideType = (typeof guides)[0];
 
   return (
     <div>
@@ -52,7 +45,7 @@ export default async function AdminGuidesPage() {
             </CardContent>
           </Card>
         ) : (
-          guides.map((guide: GuideWithCreator) => (
+          guides.map((guide: GuideType) => (
             <Card key={guide.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
