@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { db } from "@/src/lib/db";
 import { decrypt } from "@/src/lib/encryption";
-import { Client } from "ssh2";
+import { Client, ClientChannel } from "ssh2";
 
 const connections = new Map<string, Client>();
 
@@ -33,7 +33,7 @@ export async function GET(
 
     return new Promise<Response>((resolve, reject) => {
       conn.on("ready", () => {
-        conn.shell((err, stream) => {
+        conn.shell((err: Error | undefined, stream: ClientChannel) => {
           if (err) {
             reject(err);
             return;
@@ -49,7 +49,7 @@ export async function GET(
                 controller.close();
               });
 
-              stream.on("error", (err) => {
+              stream.on("error", (err: Error) => {
                 controller.error(err);
               });
             },
@@ -65,7 +65,7 @@ export async function GET(
         });
       });
 
-      conn.on("error", (err) => {
+      conn.on("error", (err: Error) => {
         reject(err);
       });
 

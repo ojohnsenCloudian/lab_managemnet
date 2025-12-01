@@ -197,7 +197,7 @@ export default function SSHCredentialsPage() {
             </CardContent>
           </Card>
         ) : (
-          credentials.map((cred) => (
+          credentials.map((cred: SSHCredential) => (
             <Card key={cred.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">

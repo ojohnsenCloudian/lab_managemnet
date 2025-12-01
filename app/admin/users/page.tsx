@@ -22,11 +22,13 @@ export default async function AdminUsersPage() {
     },
   });
 
+  type UserType = (typeof users)[0];
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Users</h1>
       <div className="grid gap-4">
-        {users.map((user) => (
+        {users.map((user: UserType) => (
           <Card key={user.id}>
             <CardHeader>
               <CardTitle>{user.name || user.email}</CardTitle>

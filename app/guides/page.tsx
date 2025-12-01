@@ -24,6 +24,8 @@ export default async function GuidesPage() {
     },
   });
 
+  type GuideType = (typeof guides)[0];
+
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b">
@@ -53,7 +55,7 @@ export default async function GuidesPage() {
               </CardContent>
             </Card>
           ) : (
-            guides.map((guide) => (
+            guides.map((guide: GuideType) => (
               <Card key={guide.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
