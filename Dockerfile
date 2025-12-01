@@ -23,32 +23,24 @@ ENV NODE_ENV=production
 RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
+# Use NODE_ENV=production explicitly and capture full output
 RUN echo "=== Starting Next.js build ===" && \
-    npm run build 2>&1; \
-    BUILD_EXIT=$?; \
+    NODE_ENV=production npm run build 2>&1 | tee /tmp/build-full.log && \
+    BUILD_EXIT=$? && \
     echo "=== Build exit code: $BUILD_EXIT ===" && \
-    echo "=== Checking diagnostics ===" && \
-    if [ -f ".next/diagnostics/build-diagnostics.json" ]; then \
-      echo "Build diagnostics:"; \
-      cat .next/diagnostics/build-diagnostics.json; \
-    fi && \
-    if [ -f ".next/diagnostics/framework.json" ]; then \
-      echo "Framework diagnostics:"; \
-      cat .next/diagnostics/framework.json; \
-    fi && \
+    echo "=== Full build output (last 200 lines) ===" && \
+    tail -200 /tmp/build-full.log && \
+    echo "=== Checking for compilation errors ===" && \
+    grep -i "error\|failed\|fail\|warn" /tmp/build-full.log | tail -30 || echo "No errors found in log" && \
     echo "=== Checking .next directory ===" && \
     ls -la .next/ && \
     echo "=== Checking for server directory ===" && \
     if [ ! -d ".next/server" ]; then \
       echo "✗ .next/server missing!"; \
-      echo "Build exit code was: $BUILD_EXIT"; \
-      if [ $BUILD_EXIT -ne 0 ]; then \
-        echo "Build failed with exit code $BUILD_EXIT"; \
-      else \
-        echo "Build completed but server directory missing - checking for errors"; \
-      fi; \
-      echo "=== All files in .next ==="; \
-      find .next -type f 2>/dev/null; \
+      echo "This suggests Next.js didn't actually compile. Checking if pages exist:"; \
+      find app -name "*.tsx" -o -name "*.ts" | head -20; \
+      echo "Trying to manually verify Next.js can see the app:"; \
+      node -e "const fs=require('fs'); console.log('app/layout.tsx exists:', fs.existsSync('app/layout.tsx')); console.log('app/page.tsx exists:', fs.existsSync('app/page.tsx'));" && \
       exit 1; \
     fi && \
     echo "✓ Build successful - .next/server exists"
