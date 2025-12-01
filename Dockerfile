@@ -23,10 +23,17 @@ ENV NODE_ENV=production
 RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
-RUN npm run build
-
-# Verify build output exists
-RUN test -d .next && echo "✓ Build successful - .next directory exists" || (echo "✗ Build failed - .next directory missing!" && exit 1)
+RUN echo "Starting build..." && \
+    npm run build && \
+    echo "Build completed. Checking .next directory..." && \
+    ls -la .next/ && \
+    test -d .next && \
+    test -f .next/BUILD_ID && \
+    echo "✓ Build successful - .next directory and BUILD_ID exist" || \
+    (echo "✗ Build failed - .next directory or BUILD_ID missing!" && \
+     echo "Contents of current directory:" && \
+     ls -la && \
+     exit 1)
 
 # Expose port
 EXPOSE 8950
