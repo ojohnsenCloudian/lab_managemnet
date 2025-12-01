@@ -24,24 +24,17 @@ RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
 RUN echo "=== Starting Next.js build ===" && \
-    npm run build 2>&1 || true && \
-    echo "=== Build command finished ===" && \
-    echo "=== Checking build diagnostics ===" && \
-    if [ -f ".next/diagnostics/build-diagnostics.json" ]; then \
-      echo "Build diagnostics:"; \
-      cat .next/diagnostics/build-diagnostics.json; \
-    fi && \
+    (npm run build 2>&1 | tee /tmp/build.log) && \
+    echo "=== Build command completed ===" && \
     echo "=== Checking .next directory ===" && \
     ls -la .next/ && \
     echo "=== Checking for server directory ===" && \
     if [ ! -d ".next/server" ]; then \
       echo "✗ .next/server missing!"; \
-      echo "Checking for any error files:"; \
-      find .next -name "*.log" -o -name "*error*" 2>/dev/null | head -10; \
-      echo "Trying to see what Next.js actually built:"; \
-      find .next -type f 2>/dev/null | head -30; \
-      echo "Attempting to run Next.js build with debug:"; \
-      DEBUG=* npm run build 2>&1 | head -100 || true; \
+      echo "=== Last 100 lines of build log ==="; \
+      tail -100 /tmp/build.log; \
+      echo "=== Checking for error patterns ==="; \
+      grep -i "error\|failed\|fail" /tmp/build.log | tail -20 || echo "No obvious errors found"; \
       exit 1; \
     fi && \
     echo "✓ Build successful - .next/server exists"
