@@ -26,8 +26,11 @@ RUN npx prisma generate
 # Build the application (using webpack for native module support)
 RUN npm run build
 
-# Verify build completed successfully
+# Verify build completed successfully and debug what was created
 RUN test -d /app/.next && echo "✓ Build output exists" || (echo "✗ Build failed - .next directory not found" && exit 1)
+RUN echo "Contents of .next directory:" && ls -la /app/.next/ || echo "Could not list .next"
+RUN test -d /app/.next/standalone && echo "✓ Standalone exists" || echo "✗ Standalone NOT found"
+RUN test -d /app/.next/static && echo "✓ Static exists" || echo "✗ Static NOT found"
 
 # Production stage
 FROM base AS runner
