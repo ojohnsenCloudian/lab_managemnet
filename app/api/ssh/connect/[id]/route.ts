@@ -31,7 +31,7 @@ export async function GET(
     const conn = new Client();
     connections.set(id, conn);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<Response>((resolve, reject) => {
       conn.on("ready", () => {
         conn.shell((err, stream) => {
           if (err) {
