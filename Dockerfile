@@ -16,6 +16,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set DATABASE_URL for Prisma generation (required for Prisma 7)
+ENV DATABASE_URL="file:./prisma/dev.db"
+
 # Generate Prisma Client
 RUN npx prisma generate
 
