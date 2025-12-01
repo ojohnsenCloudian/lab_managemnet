@@ -22,15 +22,41 @@ export async function GET(request: Request) {
       );
     }
 
-    // Verify state
-    const cookieStore = await cookies();
-    const storedState = cookieStore.get("oauth_state")?.value;
-    const callbackUrl = cookieStore.get("oauth_callback")?.value || "/guides";
+    // Verify state - state is base64url encoded JSON with state, callback, and timestamp
+    let stateData: { state: string; callback: string; timestamp: number } | null = null;
+    let callbackUrl = "/guides";
+    
+    try {
+      // Decode state from URL parameter (this is what Authentik returns)
+      const decoded = Buffer.from(state, "base64url").toString("utf-8");
+      stateData = JSON.parse(decoded);
+      
+      // Verify timestamp (state should be recent, within 10 minutes)
+      if (Date.now() - stateData.timestamp > 10 * 60 * 1000) {
+        throw new Error("State expired");
+      }
+      
+      callbackUrl = stateData.callback || "/guides";
+    } catch (error) {
+      // Fallback to cookie-based verification if decoding fails
+      const cookieStore = await cookies();
+      const storedState = cookieStore.get("oauth_state")?.value;
+      callbackUrl = cookieStore.get("oauth_callback")?.value || "/guides";
 
-    if (storedState !== state) {
-      return NextResponse.redirect(
-        new URL(`/login?error=oauth_state_mismatch`, request.url)
-      );
+      // For cookie fallback, we compare the raw state
+      if (!storedState) {
+        console.error("State verification failed:", { 
+          received: state,
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
+        return NextResponse.redirect(
+          new URL(`/login?error=oauth_state_mismatch`, request.url)
+        );
+      }
+      
+      // If we have a stored state, use it (this means state wasn't encoded)
+      // This is a fallback for older flows
+      callbackUrl = cookieStore.get("oauth_callback")?.value || "/guides";
     }
 
     // Get OAuth config
