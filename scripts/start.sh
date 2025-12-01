@@ -9,5 +9,5 @@ echo "Checking for admin user..."
 npx tsx scripts/init-admin.ts || echo "Admin user check completed"
 
 # Start the application
-echo "Starting Next.js application..."
-exec npm start
+echo "Starting Next.js application on 0.0.0.0:8950..."
+exec node server.js
