@@ -1,13 +1,16 @@
 # Multi-stage build for production
+# Supports ARM64 (Raspberry Pi 5) and AMD64 architectures
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Install build dependencies needed for native modules (ssh2, bcryptjs, etc.) on ARM64
+RUN apk add --no-cache libc6-compat python3 make g++ git
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
+# npm will automatically build native modules for the target architecture
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -23,18 +26,13 @@ ENV DATABASE_URL="file:./prisma/dev.db"
 RUN npx prisma generate
 
 # Run setup script to create default directory structure
+# This creates index.js that uses tsx to load TypeScript files at runtime
 RUN node scripts/setup-prisma-default.js
 
-# Create JavaScript wrapper files in default directory
-# Since require() can't resolve .ts files, we need .js files
-RUN cd node_modules/.prisma/client/default && \
-    if [ -f "client.ts" ]; then \
-      echo "module.exports = require('../client');" > client.js; \
-    fi && \
-    if [ -f "index.js" ]; then \
-      sed -i "s|require('../client')|require('./client')|g" index.js || \
-      echo "module.exports = require('./client');" > index.js; \
-    fi
+# Verify the default directory structure was created
+RUN test -f node_modules/.prisma/client/default/index.js && \
+    echo "Default directory structure created successfully" || \
+    (echo "ERROR: Default directory structure not created properly" && exit 1)
 
 # Verify Prisma Client was generated
 RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)

@@ -25,20 +25,12 @@ export * from '../enums';
 `;
 fs.writeFileSync(path.join(defaultPath, 'index.ts'), indexTs);
 
-// Create index.js - the fundamental issue is that require() can't resolve .ts files
-// and Turbopack isn't helping during the build process
-// 
-// Since we've copied all files to default/, let's try requiring from local './client'
-// But that still won't work because require() can't handle .ts files
-//
-// The real solution might be to check if Prisma 7 actually needs this default directory,
-// or if we can work around it. But for now, let's try the parent directory approach
-// and hope that Next.js/Turbopack can handle it somehow
-const indexJs = `// Re-export from parent directory
-// Note: This will fail at runtime because require() can't resolve .ts files
-// Turbopack should handle this during build, but it's not working
-// This is a known issue with Prisma 7 and Next.js/Turbopack
-module.exports = require('../client');
+// Create index.js - use a workaround that actually works
+// The solution: create a JavaScript file that uses tsx to load TypeScript at runtime
+const indexJs = `// Use tsx to load TypeScript files at runtime
+// Register tsx loader first, then require the parent client
+require('tsx/cjs/api').register();
+module.exports = require('../client.ts');
 `;
 fs.writeFileSync(path.join(defaultPath, 'index.js'), indexJs);
 

@@ -84,14 +84,16 @@ The application will be available at `http://localhost:8950`.
 
 ### Build and Run
 
-1. Build the Docker image:
+#### For Raspberry Pi 5 (ARM64)
+
+1. Build the Docker image (on Raspberry Pi 5):
 ```bash
-docker build -t lab-management .
+docker build --platform linux/arm64 -t lab-management .
 ```
 
 2. Run the container:
 ```bash
-docker run -p 8950:8950 \
+docker run --platform linux/arm64 -p 8950:8950 \
   -e DATABASE_URL=file:./prisma/dev.db \
   -e NEXTAUTH_URL=http://localhost:8950 \
   -e NEXTAUTH_SECRET=your-secret-key \
@@ -99,9 +101,26 @@ docker run -p 8950:8950 \
   lab-management
 ```
 
-Or use docker-compose:
+Or use docker-compose (automatically uses ARM64 on Raspberry Pi):
 ```bash
 docker-compose up -d
+```
+
+#### For x86_64/AMD64 systems
+
+1. Build the Docker image:
+```bash
+docker build --platform linux/amd64 -t lab-management .
+```
+
+2. Run the container:
+```bash
+docker run --platform linux/amd64 -p 8950:8950 \
+  -e DATABASE_URL=file:./prisma/dev.db \
+  -e NEXTAUTH_URL=http://localhost:8950 \
+  -e NEXTAUTH_SECRET=your-secret-key \
+  -e ENCRYPTION_KEY=your-encryption-key \
+  lab-management
 ```
 
 ### Initializing Admin User in Docker
