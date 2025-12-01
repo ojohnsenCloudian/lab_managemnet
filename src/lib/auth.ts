@@ -19,7 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email) {
           return null;
         }
 
@@ -27,7 +27,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: credentials.email as string },
         });
 
-        if (!user || !user.password) {
+        if (!user) {
+          return null;
+        }
+
+        // Check if this is an OAuth user (no password set)
+        if (!user.password) {
+          // OAuth users are authenticated via OAuth flow, not credentials
+          // They should use the OAuth login button
+          return null;
+        }
+
+        // Regular credentials check
+        if (!credentials?.password) {
           return null;
         }
 

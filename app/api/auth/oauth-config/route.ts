@@ -13,7 +13,7 @@ export async function GET() {
 
     return NextResponse.json({
       enabled: true,
-      redirectUrl: `${process.env.NEXTAUTH_URL || "http://localhost:8950"}/api/auth/callback/authentik`,
+      redirectUrl: `${process.env.NEXTAUTH_URL || "http://localhost:8950"}/api/auth/oauth/callback`,
     });
   } catch (error) {
     console.error("Error fetching OAuth config:", error);

@@ -109,8 +109,7 @@ function LoginForm() {
             </Button>
           </form>
           
-          {/* OAuth temporarily disabled - will be re-enabled in future update */}
-          {false && oauthEnabled && (
+          {oauthEnabled && (
             <>
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
@@ -120,7 +119,7 @@ function LoginForm() {
                   <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
                 </div>
               </div>
-              <form action="/api/auth/signin/authentik" method="POST">
+              <form action="/api/auth/oauth/authorize" method="GET">
                 <input type="hidden" name="callbackUrl" value={callbackUrl} />
                 <Button type="submit" variant="outline" className="w-full">
                   Sign in with Authentik

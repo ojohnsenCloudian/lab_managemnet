@@ -182,7 +182,7 @@ export default function OAuthPage() {
                 <div className="mt-2 p-2 bg-background rounded border">
                   <p className="text-sm font-mono break-all" id="redirectUrl">
                     {typeof window !== "undefined" 
-                      ? `${window.location.origin}/api/auth/callback/authentik`
+                      ? `${window.location.origin}/api/auth/oauth/callback`
                       : "Loading..."}
                   </p>
                 </div>
