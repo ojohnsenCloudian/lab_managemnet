@@ -23,13 +23,22 @@ ENV DATABASE_URL="file:./prisma/dev.db"
 RUN npx prisma generate
 
 # Create default directory structure that @prisma/client expects
-# Prisma 7 requires a 'default' subdirectory - copy all files
+# Prisma 7 requires a 'default' subdirectory
+# Copy all files to default directory (they will be used by Next.js during build)
 RUN mkdir -p node_modules/.prisma/client/default && \
     cp -r node_modules/.prisma/client/* node_modules/.prisma/client/default/ 2>/dev/null || true && \
-    rm -rf node_modules/.prisma/client/default/default 2>/dev/null || true && \
-    echo "export * from './client';" > node_modules/.prisma/client/default/index.d.ts && \
-    echo "export * from './models';" >> node_modules/.prisma/client/default/index.d.ts && \
-    echo "module.exports = require('./client');" > node_modules/.prisma/client/default/index.js
+    rm -rf node_modules/.prisma/client/default/default 2>/dev/null || true
+# Create index files - TypeScript index for Next.js build-time resolution
+RUN echo "export * from '../client';" > node_modules/.prisma/client/default/index.d.ts && \
+    echo "export * from '../models';" >> node_modules/.prisma/client/default/index.d.ts && \
+    echo "export * from '../enums';" >> node_modules/.prisma/client/default/index.d.ts && \
+    echo "export * from '../client';" > node_modules/.prisma/client/default/index.ts && \
+    echo "export * from '../models';" >> node_modules/.prisma/client/default/index.ts && \
+    echo "export * from '../enums';" >> node_modules/.prisma/client/default/index.ts
+# Create JS index - since all files are copied to default/, reference local client.ts
+# Next.js/Turbopack will handle TypeScript compilation during build
+# The require will be resolved by Next.js's module system which handles .ts files
+RUN echo "module.exports = require('./client');" > node_modules/.prisma/client/default/index.js
 
 # Verify Prisma Client was generated
 RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)
