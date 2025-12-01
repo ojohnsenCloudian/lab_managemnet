@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,17 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const callbackUrl = searchParams.get("callbackUrl") || "/guides";
+  const passwordChanged = searchParams.get("passwordChanged") === "true";
+
+  useEffect(() => {
+    if (passwordChanged) {
+      setSuccess("Password changed successfully! Please sign in with your new password.");
+    }
+  }, [passwordChanged]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +64,11 @@ function LoginForm() {
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                 {error}
+              </div>
+            )}
+            {success && (
+              <div className="p-3 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 rounded-md">
+                {success}
               </div>
             )}
             <div className="space-y-2">

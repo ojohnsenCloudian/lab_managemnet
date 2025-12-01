@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    // Return success - the client will need to sign in again to get a fresh session
+    return NextResponse.json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Error changing password:", error);
     return NextResponse.json(

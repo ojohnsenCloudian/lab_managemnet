@@ -48,7 +48,18 @@ export default function ChangePasswordPage() {
         return;
       }
 
-      router.push("/guides");
+      // Sign out to clear the old session, then redirect to login
+      // The user will need to sign in again with the new password
+      try {
+        await fetch("/api/auth/signout", {
+          method: "POST",
+        });
+      } catch (err) {
+        // Ignore signout errors
+      }
+
+      // Redirect to login with a success message
+      router.push("/login?passwordChanged=true");
       router.refresh();
     } catch (err) {
       setError("An error occurred. Please try again.");

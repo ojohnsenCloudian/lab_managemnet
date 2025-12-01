@@ -4,6 +4,7 @@ import { db } from "@/src/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { DeleteGuideButton } from "./delete-button";
 
 export default async function AdminGuidesPage() {
   const session = await auth();
@@ -47,11 +48,14 @@ export default async function AdminGuidesPage() {
               <div className="text-sm text-muted-foreground mb-4">
                 Created by {guide.createdBy.name || guide.createdBy.email}
               </div>
-              <Link href={`/admin/guides/${guide.id}/edit`}>
-                <Button variant="outline" size="sm">
-                  Edit
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Link href={`/admin/guides/${guide.id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    Edit
+                  </Button>
+                </Link>
+                <DeleteGuideButton guideId={guide.id} />
+              </div>
             </CardContent>
           </Card>
         ))}
