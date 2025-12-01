@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Temporarily disable reactCompiler to see if it's causing issues
-  // reactCompiler: true,
   serverExternalPackages: [
     '@prisma/client',
     'prisma',
@@ -11,8 +9,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Empty turbopack config to silence error when using webpack
-  turbopack: {},
   webpack: (config, { isServer }) => {
     if (isServer) {
       const originalExternals = config.externals;
