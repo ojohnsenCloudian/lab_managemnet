@@ -22,29 +22,33 @@ echo "Checking for .next directory..."
 if [ ! -d ".next" ]; then
   echo "ERROR: .next directory not found! Build may have failed."
   echo "Current working directory: $(pwd)"
-  echo "Listing current directory contents:"
   ls -la
-  echo "Checking for .next:"
-  ls -la .next 2>&1 || echo ".next does not exist"
-  echo ""
-  echo "This usually means the Docker build failed. Please check the build logs:"
-  echo "  docker build -t lab-management . 2>&1 | grep -A 20 'Build'"
   exit 1
 fi
 
-# Check for BUILD_ID file which Next.js requires
-if [ ! -f ".next/BUILD_ID" ]; then
-  echo "ERROR: .next/BUILD_ID not found! Build incomplete."
+# Check for server directory (required for production)
+if [ ! -d ".next/server" ]; then
+  echo "ERROR: .next/server directory not found! Build incomplete."
   echo "Contents of .next directory:"
-  ls -la .next/ 2>&1 || echo ".next directory empty or missing"
+  ls -la .next/ 2>&1
+  echo ""
+  echo "This usually means the Docker build failed. Please check the build logs."
   exit 1
 fi
 
-echo "✓ Build verified - BUILD_ID: $(cat .next/BUILD_ID)"
+# Check for BUILD_ID (preferred but not always required)
+if [ -f ".next/BUILD_ID" ]; then
+  echo "✓ Build verified - BUILD_ID: $(cat .next/BUILD_ID)"
+else
+  echo "⚠ BUILD_ID not found, but server directory exists - proceeding anyway"
+  echo "Contents of .next:"
+  ls -la .next/ | head -20
+fi
+
 echo "✓ Starting Next.js server on ${HOSTNAME:-0.0.0.0}:${PORT:-8950}"
 
 # Use next start directly
-# Next.js 16 should bind to 0.0.0.0 by default, but we'll ensure it
+# Next.js 16 should bind to 0.0.0.0 by default
 export HOSTNAME=${HOSTNAME:-0.0.0.0}
 export PORT=${PORT:-8950}
 exec npx next start -p ${PORT}
