@@ -37,7 +37,7 @@ export default async function GuideViewPage({
             <CardTitle>Guide Not Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>The guide you're looking for doesn't exist.</p>
+            <p>The guide you&apos;re looking for doesn&apos;t exist.</p>
             <Link href="/guides">
               <Button className="mt-4">Back to Guides</Button>
             </Link>
