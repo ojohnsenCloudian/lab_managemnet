@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String   @id @default(cuid())
+  email                 String?  @unique
+  name                  String?
+  password              String?
+  isAdmin               Boolean  @default(false)
+  passwordChangeRequired Boolean @default(false)
+  oauthProviderId       String?
+  oauthProvider         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  labGuides             LabGuide[]
+  accounts              Account[]
+  sessions              Session[]
+  @@map("users")
+}
+
+model LabGuide {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  content     String
+  steps       String
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  sshConfigs  SSHCredential[]
+  @@map("lab_guides")
+}
+
+model SSHCredential {
+  id          String   @id @default(cuid())
+  name        String
+  host        String
+  port        Int      @default(22)
+  username    String
+  password    String?
+  privateKey  String?
+  labGuideId  String?
+  labGuide    LabGuide? @relation(fields: [labGuideId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("ssh_credentials")
+}
+
+model OAuthProvider {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  clientId          String
+  clientSecret      String
+  authorizationUrl  String
+  tokenUrl          String
+  userInfoUrl       String
+  scope             String   @default("openid profile email")
+  isEnabled         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@map("oauth_providers")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
