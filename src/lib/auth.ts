@@ -56,8 +56,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
-        token.isAdmin = (user as any).isAdmin;
-        token.passwordChangeRequired = (user as any).passwordChangeRequired;
+        token.isAdmin = user.isAdmin;
+        token.passwordChangeRequired = user.passwordChangeRequired;
       }
 
       // Handle OAuth login (Authentik)
@@ -106,8 +106,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string;
-        session.user.isAdmin = token.isAdmin as boolean;
-        session.user.passwordChangeRequired = token.passwordChangeRequired as boolean;
+        session.user.isAdmin = token.isAdmin ?? false;
+        session.user.passwordChangeRequired = token.passwordChangeRequired ?? false;
       }
       return session;
     },
