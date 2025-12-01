@@ -38,6 +38,7 @@ RUN test -f node_modules/.prisma/client/default/index.js && \
 RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)
 
 # Build the application
+# Note: Next.js 16 uses Turbopack by default, but webpack config should handle ssh2 as external
 RUN npm run build
 
 # Production image, copy all the files and run next

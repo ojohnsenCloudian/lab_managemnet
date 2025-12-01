@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { db } from "@/src/lib/db";
 import { decrypt } from "@/src/lib/encryption";
-import { Client, ClientChannel } from "ssh2";
+import { getClient } from "@/src/lib/ssh2-loader";
+import type { ClientChannel } from "@/src/lib/ssh2-loader";
 
-const connections = new Map<string, Client>();
+const Client = getClient();
+const connections = new Map<string, InstanceType<typeof Client>>();
 
 export async function GET(
   request: Request,
