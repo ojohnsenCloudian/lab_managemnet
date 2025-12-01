@@ -23,27 +23,15 @@ ENV NODE_ENV=production
 RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
-# Run build with verbose output and capture errors
+# Use NODE_OPTIONS to get more verbose output
 RUN echo "=== Starting Next.js build ===" && \
-    npm run build 2>&1 | tee /tmp/build-output.log || BUILD_FAILED=1; \
-    echo "=== Build command finished ==="; \
-    echo "=== Build output (last 100 lines) ==="; \
-    tail -100 /tmp/build-output.log; \
-    if [ "$BUILD_FAILED" = "1" ]; then \
-      echo "✗ Build failed! Full output:"; \
-      cat /tmp/build-output.log; \
-      exit 1; \
-    fi; \
-    echo "=== Checking build output ==="; \
+    NODE_OPTIONS="--trace-warnings" npm run build 2>&1 && \
+    echo "=== Build command finished ===" && \
+    echo "=== Checking .next directory ===" && \
     ls -la .next/ && \
-    echo "=== Checking for server directory ==="; \
-    if [ ! -d ".next/server" ]; then \
-      echo "✗ ERROR: .next/server directory missing!"; \
-      echo "Build output:"; \
-      cat /tmp/build-output.log; \
-      exit 1; \
-    fi; \
-    echo "✓ Build successful - .next/server exists"
+    echo "=== Checking for server directory ===" && \
+    (test -d ".next/server" && echo "✓ .next/server exists" || (echo "✗ .next/server missing!" && find .next -type f 2>/dev/null | head -20 && exit 1)) && \
+    echo "✓ Build verification complete"
 
 # Expose port
 EXPOSE 8950
