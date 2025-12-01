@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true, // Temporarily ignore to see if this is the issue
   },
+  // Empty turbopack config to silence error when using webpack
+  turbopack: {},
   webpack: (config, { isServer }) => {
     if (isServer) {
       const originalExternals = config.externals;
