@@ -22,8 +22,19 @@ ENV DATABASE_URL="file:./prisma/dev.db"
 # Generate Prisma Client (must be done before build)
 RUN npx prisma generate
 
-# Run postinstall script to create default directory structure
+# Run setup script to create default directory structure
 RUN node scripts/setup-prisma-default.js
+
+# Create JavaScript wrapper files in default directory
+# Since require() can't resolve .ts files, we need .js files
+RUN cd node_modules/.prisma/client/default && \
+    if [ -f "client.ts" ]; then \
+      echo "module.exports = require('../client');" > client.js; \
+    fi && \
+    if [ -f "index.js" ]; then \
+      sed -i "s|require('../client')|require('./client')|g" index.js || \
+      echo "module.exports = require('./client');" > index.js; \
+    fi
 
 # Verify Prisma Client was generated
 RUN test -d node_modules/.prisma/client && echo "Prisma client directory exists" || (echo "ERROR: Prisma client directory not found" && exit 1)

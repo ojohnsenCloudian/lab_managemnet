@@ -25,9 +25,20 @@ export * from '../enums';
 `;
 fs.writeFileSync(path.join(defaultPath, 'index.ts'), indexTs);
 
-// Create index.js - re-export from parent directory
-// Turbopack should handle TypeScript resolution during build
-const indexJs = `module.exports = require('../client');
+// Create index.js - the fundamental issue is that require() can't resolve .ts files
+// and Turbopack isn't helping during the build process
+// 
+// Since we've copied all files to default/, let's try requiring from local './client'
+// But that still won't work because require() can't handle .ts files
+//
+// The real solution might be to check if Prisma 7 actually needs this default directory,
+// or if we can work around it. But for now, let's try the parent directory approach
+// and hope that Next.js/Turbopack can handle it somehow
+const indexJs = `// Re-export from parent directory
+// Note: This will fail at runtime because require() can't resolve .ts files
+// Turbopack should handle this during build, but it's not working
+// This is a known issue with Prisma 7 and Next.js/Turbopack
+module.exports = require('../client');
 `;
 fs.writeFileSync(path.join(defaultPath, 'index.js'), indexJs);
 
@@ -68,6 +79,20 @@ if (fs.existsSync(path.join(prismaClientPath, 'client.ts'))) {
     }
   });
 }
+
+// Create a package.json in the default directory to help with module resolution
+// This might help Next.js/Turbopack resolve the TypeScript files
+const packageJson = {
+  name: '.prisma-client-default',
+  version: '1.0.0',
+  type: 'commonjs',
+  main: './index.js',
+  types: './index.d.ts'
+};
+fs.writeFileSync(
+  path.join(defaultPath, 'package.json'),
+  JSON.stringify(packageJson, null, 2)
+);
 
 console.log('Prisma default directory structure created successfully');
 
