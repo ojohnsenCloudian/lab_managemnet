@@ -19,7 +19,7 @@ COPY . .
 # Set DATABASE_URL for Prisma generation (required for Prisma 7)
 ENV DATABASE_URL="file:./prisma/dev.db"
 
-# Generate Prisma Client
+# Generate Prisma Client (must be done before build)
 RUN npx prisma generate
 
 # Build the application
@@ -40,6 +40,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
