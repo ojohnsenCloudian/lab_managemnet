@@ -22,8 +22,11 @@ ENV NODE_ENV=production
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build the application
+# Build the application (migrations will be applied at runtime)
 RUN npm run build
+
+# Verify build output exists
+RUN test -d .next && echo "✓ Build successful - .next directory exists" || (echo "✗ Build failed - .next directory missing!" && exit 1)
 
 # Expose port
 EXPOSE 8950

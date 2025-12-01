@@ -1,0 +1,27 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.local
+.env*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.pem
+.vscode
+.idea
+*.swp
+*.swo
+*~
+coverage
+.nyc_output
+dist
+build
+dev.db
+*.db
+*.db-journal
+tsconfig.tsbuildinfo
+# But keep migrations!
+!prisma/migrations

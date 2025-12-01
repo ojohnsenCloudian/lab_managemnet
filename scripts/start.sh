@@ -2,7 +2,13 @@
 
 # Run Prisma migrations
 echo "Running Prisma migrations..."
-npx prisma migrate deploy || echo "Migrations completed or database already initialized"
+if [ -d "prisma/migrations" ] && [ "$(ls -A prisma/migrations 2>/dev/null)" ]; then
+  echo "Applying existing migrations..."
+  npx prisma migrate deploy || echo "Migration deploy completed or database already initialized"
+else
+  echo "No migrations found, creating initial migration..."
+  npx prisma migrate dev --name init || echo "Migration creation completed"
+fi
 
 # Initialize admin user if it doesn't exist
 echo "Checking for admin user..."
