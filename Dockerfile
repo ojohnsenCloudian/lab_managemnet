@@ -24,16 +24,21 @@ RUN npx prisma generate
 
 # Build the application (migrations will be applied at runtime)
 RUN echo "=== Starting Next.js build ===" && \
-    npm run build && \
-    echo "=== Build completed, checking output ===" && \
+    npm run build 2>&1 | tee /tmp/build.log || true && \
+    echo "=== Build output ===" && \
+    cat /tmp/build.log && \
+    echo "=== Checking for errors ===" && \
+    grep -i "error\|failed\|fail" /tmp/build.log || echo "No errors in log" && \
+    echo "=== Checking .next directory ===" && \
     ls -la .next/ && \
+    find .next -type f -o -type d | head -30 && \
     if [ ! -d ".next/server" ]; then \
       echo "✗ ERROR: .next/server missing!"; \
-      echo "Build failed - server directory not created"; \
+      echo "Build log shows:"; \
+      tail -50 /tmp/build.log; \
       exit 1; \
     fi && \
-    echo "✓ Build successful - .next/server exists" && \
-    ls -la .next/server/ | head -10
+    echo "✓ Build successful - .next/server exists"
 
 # Expose port
 EXPOSE 8950
