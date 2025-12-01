@@ -10,8 +10,7 @@
     "init-admin": "tsx scripts/init-admin.ts",
     "prisma:generate": "prisma generate && node scripts/setup-prisma-default.js",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "postinstall": "node scripts/setup-prisma-default.js"
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
